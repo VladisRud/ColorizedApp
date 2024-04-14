@@ -13,11 +13,11 @@ class SetUpColorViewController: UIViewController {
     var redColor: Float = 0
     var greenColor: Float = 0
     var blueColor: Float = 0
+    weak var delegate: SetUpColorViewControllerDelegate?
     
     //MARK: - viewDidLoad
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
         view.backgroundColor = .white
         
         setUpElements()
@@ -44,7 +44,7 @@ class SetUpColorViewController: UIViewController {
     
     //MARK: - UI Elements (Stacks)
     private var redStack: UIStackView = {
-        let stack = UIStackView()private
+        let stack = UIStackView()
         return stack
     }()
     
@@ -202,6 +202,7 @@ private extension SetUpColorViewController {
             $0.textAlignment = .center
             $0.borderStyle = .roundedRect
             $0.translatesAutoresizingMaskIntoConstraints = false
+            $0.delegate = self
         }
         
         // Sliders
@@ -306,7 +307,7 @@ private extension SetUpColorViewController {
     
     
     
-    //MARK: - Elements Functions
+    //MARK: - UIElements Functions
     @objc func changeColor() {
         colorizedView.backgroundColor = UIColor(
             red: CGFloat(redSlider.value),
@@ -318,6 +319,14 @@ private extension SetUpColorViewController {
         redCountLabel.text = String(format: "%.2f", redSlider.value)
         greenCountLabel.text = String(format: "%.2f", greenSlider.value)
         blueCountLabel.text = String(format: "%.2f", blueSlider.value)
+        
+        redTextField.text = String(format: "%.2f", redSlider.value)
+        greenTextField.text = String(format: "%.2f", greenSlider.value)
+        blueTextField.text = String(format: "%.2f", blueSlider.value)
+        
+        redColor = redSlider.value
+        greenColor = greenSlider.value
+        blueColor = blueSlider.value
     }
     
     func setUpColorOnScreenAndElements() {
@@ -341,10 +350,96 @@ private extension SetUpColorViewController {
         blueTextField.text = String(format: "%.2f", blueColor)
     }
     
+    func updateElementsAfterTF() {
+        colorizedView.backgroundColor = UIColor(
+            red: CGFloat(redColor),
+            green: CGFloat(greenColor),
+            blue: CGFloat(blueColor),
+            alpha: 1
+        )
+        
+        redCountLabel.text = String(format: "%.2f", redColor)
+        greenCountLabel.text = String(format: "%.2f", greenColor)
+        blueCountLabel.text = String(format: "%.2f", blueColor)
+        
+        redSlider.value = redColor
+        greenSlider.value = greenColor
+        blueSlider.value = blueColor
+        
+        redTextField.text = String(format: "%.2f", redColor)
+        greenTextField.text = String(format: "%.2f", greenColor)
+        blueTextField.text = String(format: "%.2f", blueColor)
+    }
+    
+    //MARK: - Button Function
     @objc func exitToStartVC() {
+        view.endEditing(true)
+        delegate?.getColor(red: redColor, green: greenColor, blue: blueColor)
         dismiss(animated: true)
     }
 }
 
-extension SetUpColorViewController
+//MARK: - UITextFieldDelegate
+extension SetUpColorViewController: UITextFieldDelegate {
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        switch textField {
+        case redTextField:
+            redColor = Float(textField.text ?? "0") ?? 0
+        case greenTextField:
+            greenColor = Float(textField.text ?? "0") ?? 0
+        default:
+            blueColor = Float(textField.text ?? "0") ?? 0
+        }
+        
+        print(redColor)
+        print(greenColor)
+        print(blueColor)
+        
+        updateElementsAfterTF()
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        // Check if it is number or dots
+        let allowedCharacterSet = CharacterSet(charactersIn: "0123456789.")
+        let replacementStringCharacterSet = CharacterSet(charactersIn: string)
+        guard replacementStringCharacterSet.isSubset(of: allowedCharacterSet) || string.isEmpty || string == "," else {
+            showAlert(message: "Please, type number in range 0.00 - 1.00")
+            return false
+        }
+        
+        // Get new text from acces range
+        var newText = (textField.text as NSString?)?.replacingCharacters(in: range, with: string) ?? string
+        
+        // If comma, change to dot
+        newText = newText.replacingOccurrences(of: ",", with: ".")
+        
+        // If the new text is not empty and is not a number, or is greater than length 4, or greater than 1.00 - reject the input
+        if !newText.isEmpty {
+            guard let number = Double(newText), number <= 1 else {
+                showAlert(message: "Number cannot be greater than 1.00")
+                return false
+            }
+            
+            if newText.count > 4 {
+                showAlert(message: "Maximum number length - 4 symbols.")
+                return false
+            }
+        }
+        
+        textField.text = newText
+        
+        return false
+    }
+    
+    // alert for all types of wrongs
+    func showAlert(message: String) {
+        let alert = UIAlertController(title: "Wrong", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        present(alert, animated: true, completion: nil)
+    }
+}
 

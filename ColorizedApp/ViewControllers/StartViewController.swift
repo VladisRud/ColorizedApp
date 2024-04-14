@@ -7,6 +7,10 @@
 
 import UIKit
 
+protocol SetUpColorViewControllerDelegate: AnyObject {
+    func getColor(red redColor: Float, green greenColor: Float, blue blueColor: Float)
+}
+
 class StartViewController: UIViewController {
     
     //MARK: - Properties
@@ -18,13 +22,11 @@ class StartViewController: UIViewController {
         super.viewDidLoad()
         addRightBarButton()
         makeRandomColor()
-
-        // Do any additional setup after loading the view.
     }
 }
 
 private extension StartViewController {
-    //MARK: - UI Elements
+    //MARK: - UI Functions
     func addRightBarButton() {
         let rightBarButton = UIBarButtonItem(image: UIImage(systemName: "gearshape.fill"), style: .plain, target: self, action: #selector(showColorSettings))
         self.navigationItem.rightBarButtonItem = rightBarButton
@@ -43,14 +45,32 @@ private extension StartViewController {
         )
     }
     
-    //MARK: - Button Func
+    //MARK: - Button Function
     @objc func showColorSettings() {
-        let setUpColorVC = SetUpColorController()
+        let setUpColorVC = SetUpColorViewController()
+        setUpColorVC.delegate = self
         setUpColorVC.redColor = redColor
         setUpColorVC.greenColor = greenColor
         setUpColorVC.blueColor = blueColor
         setUpColorVC.modalPresentationStyle = .fullScreen
         present(setUpColorVC, animated: true)
     }
+    
+}
+
+extension StartViewController: SetUpColorViewControllerDelegate {
+    func getColor(red redColor: Float, green greenColor: Float, blue blueColor: Float) {
+        self.redColor = redColor
+        self.greenColor = greenColor
+        self.blueColor = blueColor
+        
+        view.backgroundColor = UIColor(
+            red: CGFloat(self.redColor),
+            green: CGFloat(self.greenColor),
+            blue: CGFloat(self.blueColor),
+            alpha: 1
+        )
+    }
+    
     
 }
